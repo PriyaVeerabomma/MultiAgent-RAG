@@ -1,15 +1,14 @@
-# backend/langraph/orchestrator.py
-from typing import Dict, Any, List, Optional, TypedDict
-from langchain.schema import HumanMessage, SystemMessage, AIMessage
+from typing import Dict, Any, List, Optional
 from langchain.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 import os
 import logging
+from dotenv import load_dotenv
 
 # Import our agents
 from agents.rag_agent import RagAgent
 from agents.snowflake_agent import SnowflakeAgent
-from agents.websearch_agent import WebSearchAgent
+from agents.websearch_agent import WebSearchAgent 
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -17,13 +16,16 @@ logger = logging.getLogger(__name__)
 
 class ResearchOrchestrator:
     def __init__(self, use_rag: bool = True, use_snowflake: bool = True, use_websearch: bool = True):
+        # Load environment variables
+        load_dotenv()
+        
         # Get API key
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise ValueError("OPENAI_API_KEY environment variable not set")
             
         # Initialize LLM
-        self.llm = ChatOpenAI(temperature=0, api_key=api_key)
+        self.llm = ChatOpenAI(temperature=0, api_key=api_key, model="gpt-4")
         
         # Initialize agents if needed
         self.rag_agent = RagAgent() if use_rag else None
@@ -96,9 +98,9 @@ class ResearchOrchestrator:
                 }
                 content["financial_metrics"] = f"Error retrieving financial metrics: {str(e)}"
         
-        # Process with WebSearch agent if enabled
+        # Process with  WebSearch agent if enabled
         if "websearch" in self.active_agents:
-            logger.info("Processing with WebSearch agent")
+            logger.info("Processing with  WebSearch agent")
             try:
                 websearch_results = self.websearch_agent.query(query, years, quarters)
                 results["latest_insights"] = {
@@ -114,28 +116,70 @@ class ResearchOrchestrator:
                 }
                 content["latest_insights"] = f"Error retrieving latest insights: {str(e)}"
         
+        # If only websearch is enabled, use its response as the final report
+        if self.active_agents == ["websearch"]:
+            final_response = content.get("latest_insights", "")
+            return {
+                "content": final_response,
+                **results
+            }
+            
         # Synthesize the final report if we have multiple sections
         final_response = ""
         if len(self.active_agents) > 1:
             try:
-                # Create prompt for synthesis
+                # Create improved prompt for synthesis
                 prompt = ChatPromptTemplate.from_messages([
                     ("system", """
-                    You are a financial research assistant specialized in NVIDIA. 
-                    Synthesize information from multiple sources to create a comprehensive report.
-                    Include relevant information from all available sources.
-                    Structure your response clearly with logical flow between different types of information.
+                    You are a professional financial analyst specializing in NVIDIA. 
+                    Your task is to synthesize information from multiple sources to create a comprehensive, 
+                    well-structured 1-2 page report that addresses the research query.
+                    
+                    Follow these guidelines for an excellent report:
+                    
+                    1. STRUCTURE: Create a formal report with clear sections including:
+                       - Executive Summary
+                       - Historical Context and Background
+                       - Financial Performance Analysis
+                       - Current Market Position
+                       - Future Outlook and Projections
+                       - Conclusion & Investment Implications
+                    
+                    2. CONTENT GUIDELINES:
+                       - Integrate information from all provided sources seamlessly
+                       - Emphasize data-driven insights with specific numbers and metrics
+                       - Present balanced analysis including both strengths and challenges
+                       - Highlight trends and patterns across time periods
+                       - Connect historical data with current market dynamics
+                    
+                    3. WRITING STYLE:
+                       - Use professional, concise language
+                       - Present information in bulleted lists where appropriate for readability
+                       - Bold important facts and figures
+                       - Maintain an objective, analytical tone
+                       - Properly cite all information sources
+                    
+                    4. FORMAT:
+                       - Ensure the report is comprehensive (equivalent to 1-2 pages)
+                       - Use clear headings and subheadings to organize content
+                       - Include proper citations for all sources
+                    
+                    Synthesize the information from all available sources into a cohesive report that flows logically
+                    and provides deep insights beyond what any individual source offers.
                     """),
                     ("human", """
                     Please create a comprehensive report answering the following query: {query}
                     
                     Available information:
                     
-                    Historical Data: {historical_data}
+                    HISTORICAL DATA:
+                    {historical_data}
                     
-                    Financial Metrics: {financial_metrics}
+                    FINANCIAL METRICS:
+                    {financial_metrics}
                     
-                    Latest Insights: {latest_insights}
+                    LATEST INSIGHTS:
+                    {latest_insights}
                     """)
                 ])
                 

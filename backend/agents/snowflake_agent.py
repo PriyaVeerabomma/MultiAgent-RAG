@@ -1,7 +1,6 @@
 # backend/agents/snowflake_agent.py
 import os
 import pandas as pd
-import snowflake.connector
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from typing import Dict, Any, Optional, List
@@ -16,29 +15,20 @@ class SnowflakeAgent:
         # Load environment variables
         load_dotenv()
         
-        # Validate required environment variables
-        required_vars = [
-            "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD", "SNOWFLAKE_ACCOUNT",
-            "SNOWFLAKE_WAREHOUSE", "SNOWFLAKE_DATABASE", "SNOWFLAKE_SCHEMA"
-        ]
-        
-        for var in required_vars:
-            if not os.getenv(var):
-                raise ValueError(f"{var} environment variable not set")
-        
         # Initialize LLM
         self.llm = ChatOpenAI(temperature=0)
         
-        # Use the correct table name based on screenshot
-        self.table_name = os.getenv("SNOWFLAKE_TABLE", "NVDA_STOCK_DATA")
+        # CSV file path - use relative path for local development
+        self.csv_path = os.path.join(os.path.dirname(__file__), "..", "NVDA_5yr_history_20250407.csv")
+        print(f"Using CSV file at: {self.csv_path}")
         
-        # Create a shared directory for charts
-        self.charts_dir = os.getenv("CHARTS_DIR", "/app/shared")
+        # Create charts directory in backend folder
+        self.charts_dir = os.path.join(os.path.dirname(__file__), "..", "charts")
         os.makedirs(self.charts_dir, exist_ok=True)
     
     def query(self, query_text: str, years: Optional[List[int]] = None, quarters: Optional[List[int]] = None) -> Dict[str, Any]:
         """
-        Query Snowflake for NVIDIA financial data based on query text, years, and quarters.
+        Query NVIDIA financial data based on query text, years, and quarters.
         
         Args:
             query_text: The query text
@@ -49,31 +39,36 @@ class SnowflakeAgent:
             Dictionary with structured data, charts, and generated response
         """
         try:
-            # Build SQL query with filters
-            sql_query = f"SELECT * FROM {self.table_name}"
+            # Read directly from CSV file
+            if os.path.exists(self.csv_path):
+                df = pd.read_csv(self.csv_path)
+                print(f"Successfully read CSV with {len(df)} rows")
+            else:
+                return {
+                    "response": f"Could not find CSV file at {self.csv_path}",
+                    "chart": None,
+                    "sources": ["CSV File (not found)"]
+                }
             
-            where_clauses = []
-            if years is not None and len(years) > 0:
-                # For stock data, we need to extract the year from the DATE column
-                years_str = ", ".join([str(year) for year in years])
-                where_clauses.append(f"YEAR(DATE) IN ({years_str})")
-            
-            if quarters is not None and len(quarters) > 0:
-                # Extract quarter from DATE
-                quarters_str = ", ".join([str(quarter) for quarter in quarters])
-                where_clauses.append(f"QUARTER(DATE) IN ({quarters_str})")
+            # Apply filters if provided
+            if df is not None and not df.empty:
+                # Convert DATE to datetime
+                if 'DATE' in df.columns:
+                    df['DATE'] = pd.to_datetime(df['DATE'])
                 
-            if where_clauses:
-                sql_query += " WHERE " + " AND ".join(where_clauses)
-            
-            # Query Snowflake
-            df = self._query_snowflake(sql_query)
+                # Filter by years if provided
+                if years is not None and len(years) > 0:
+                    df = df[df['DATE'].dt.year.isin(years)]
+                
+                # Filter by quarters if provided
+                if quarters is not None and len(quarters) > 0:
+                    df = df[df['DATE'].dt.quarter.isin(quarters)]
             
             if df.empty:
                 return {
                     "response": f"No stock data found for NVIDIA with the specified filters.",
                     "chart": None,
-                    "sources": ["Snowflake Database"]
+                    "sources": ["CSV Data"]
                 }
             
             # Generate chart if data is available
@@ -87,51 +82,19 @@ class SnowflakeAgent:
             return {
                 "response": analysis,
                 "chart": chart_path,
-                "sources": ["Snowflake Database - " + self.table_name]
+                "sources": ["NVIDIA Stock History CSV Data"]
             }
             
         except Exception as e:
             # Return error details with traceback for better debugging
             import traceback
-            error_message = f"Error querying Snowflake: {str(e)}\n{traceback.format_exc()}"
+            error_message = f"Error processing data: {str(e)}\n{traceback.format_exc()}"
             print(error_message)
             return {
                 "response": error_message,
                 "chart": None,
                 "sources": []
             }
-    
-    def _query_snowflake(self, query: str) -> pd.DataFrame:
-        """Execute query against Snowflake and return results as DataFrame"""
-        conn = snowflake.connector.connect(
-            user=os.getenv("SNOWFLAKE_USER"),
-            password=os.getenv("SNOWFLAKE_PASSWORD"),
-            account=os.getenv("SNOWFLAKE_ACCOUNT"),
-            warehouse=os.getenv("SNOWFLAKE_WAREHOUSE"),
-            database=os.getenv("SNOWFLAKE_DATABASE"),
-            schema=os.getenv("SNOWFLAKE_SCHEMA")
-        )
-        
-        try:
-            # Check if table exists first
-            cursor = conn.cursor()
-            cursor.execute(f"SHOW TABLES LIKE '{self.table_name}'")
-            tables = cursor.fetchall()
-            
-            if not tables:
-                # For demonstration without proper Snowflake setup, use CSV instead
-                print(f"Table {self.table_name} not found. Using fallback CSV data.")
-                csv_path = os.getenv("NVDA_CSV_PATH", "/app/NVDA_5yr_history_20250407.csv")
-                if os.path.exists(csv_path):
-                    return pd.read_csv(csv_path)
-                else:
-                    raise ValueError(f"Neither Snowflake table nor CSV file found at {csv_path}")
-            
-            # Execute the actual query
-            df = pd.read_sql(query, conn)
-            return df
-        finally:
-            conn.close()
     
     def _generate_chart(self, df, metric="CLOSE") -> str:
         """Generate chart for visualization"""
@@ -193,7 +156,7 @@ class SnowflakeAgent:
                 color='gray'
             )
 
-        # Save the chart to the shared directory
+        # Save the chart to the charts directory
         chart_filename = f"nvda_{metric_col.lower()}_chart.png"
         chart_path = os.path.join(self.charts_dir, chart_filename)
         
@@ -203,12 +166,8 @@ class SnowflakeAgent:
             print(f"Chart saved to: {chart_path}")
             plt.close()
             
-            # Test if file exists and is readable
-            if os.path.exists(chart_path):
-                return chart_path
-            else:
-                print(f"Chart file not found at {chart_path} after saving")
-                return None
+            # Return the absolute path for the frontend to find
+            return os.path.abspath(chart_path)
         except Exception as e:
             print(f"Error saving chart: {str(e)}")
             plt.close()

@@ -2,10 +2,22 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
-from agents.rag_agent import RagAgent
-from agents.snowflake_agent import SnowflakeAgent 
-from agents.websearch_agent import WebSearchAgent
 from langraph.orchestrator import ResearchOrchestrator
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Verify key environment variables
+tavily_api_key = os.getenv("TAVILY_API_KEY")
+openai_api_key = os.getenv("OPENAI_API_KEY")
+pinecone_api_key = os.getenv("PINECONE_API_KEY")
+
+print(f"Environment variables loaded:")
+print(f"- TAVILY_API_KEY: {'Set' if tavily_api_key else 'NOT SET'}")
+print(f"- OPENAI_API_KEY: {'Set' if openai_api_key else 'NOT SET'}")
+print(f"- PINECONE_API_KEY: {'Set' if pinecone_api_key else 'NOT SET'}")
 
 app = FastAPI(title="NVIDIA Research Assistant API")
 
@@ -33,6 +45,10 @@ async def generate_research(request: ResearchQuery):
             quarters=request.quarters
         )
         
+        # Maintain backwards compatibility with the frontend
+        if "summary" in result and "content" not in result:
+            result["content"] = result["summary"]
+        
         return result
     except Exception as e:
         import traceback
@@ -43,3 +59,7 @@ async def generate_research(request: ResearchQuery):
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
