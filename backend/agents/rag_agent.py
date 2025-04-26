@@ -3,8 +3,6 @@ import os
 import logging
 from typing import Dict, Any, List, Optional
 from pinecone import Pinecone
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain.prompts import ChatPromptTemplate
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 
@@ -14,20 +12,46 @@ logger = logging.getLogger(__name__)
 
 class RagAgent:
     def __init__(self):
-        # Initialize Pinecone client
-        api_key = os.getenv("PINECONE_API_KEY")
-        openai_api_key = os.getenv("OPENAI_API_KEY")
+        # Directly read the .env file to get the API key
+        backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        env_file = os.path.join(backend_dir, '.env')
+        
+        # Load environment variables directly from .env file
+        env_vars = {}
+        with open(env_file, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                if '=' in line:
+                    key, value = line.split('=', 1)
+                    env_vars[key.strip()] = value.strip()
+        
+        # Get API keys from loaded variables
+        api_key = env_vars.get("PINECONE_API_KEY")
+        openai_api_key = env_vars.get("OPENAI_API_KEY")
+        
+        # Store in environment (for other components)
+        os.environ["PINECONE_API_KEY"] = api_key
+        os.environ["OPENAI_API_KEY"] = openai_api_key
+        
+        # Print debug info about environment variables
+        logger.info(f"PINECONE_API_KEY exists and has length: {len(api_key) if api_key else 0}")
+        logger.info(f"Pinecone API key starts with: {api_key[:10] if api_key and len(api_key) > 10 else 'N/A'}")
+        logger.info(f"OPENAI_API_KEY exists and has length: {len(openai_api_key) if openai_api_key else 0}")
+        
         if not api_key:
-            raise ValueError("PINECONE_API_KEY environment variable not set")
+            raise ValueError("PINECONE_API_KEY not found in .env file")
         if not openai_api_key:
-            raise ValueError("OPENAI_API_KEY environment variable not set")
+            raise ValueError("OPENAI_API_KEY not found in .env file")
         
+        # Initialize Pinecone with the API key
         self.pc = Pinecone(api_key=api_key)
-        self.index_name = "test1"
+        self.index_name = "nvidia-reports"
         
-        # Change to OpenAI embeddings instead of HuggingFace
+        # Use OpenAI embeddings
         self.embedding_model = OpenAIEmbeddings(
-            model="text-embedding-3-large",
+            model="text-embedding-3-small",  # Use small model to match 1536 dimensions
             openai_api_key=openai_api_key
         )
         self.llm = ChatOpenAI(temperature=0, api_key=openai_api_key)
@@ -150,7 +174,7 @@ class RagAgent:
             logger.info(f"Available indexes: {indexes}")
             
             # Check if our index exists in the available indexes
-            if self.index_name not in [idx for idx in indexes]:
+            if self.index_name not in [idx.name for idx in indexes]:
                 logger.error(f"Index '{self.index_name}' not found in available indexes: {indexes}")
                 return False
                 

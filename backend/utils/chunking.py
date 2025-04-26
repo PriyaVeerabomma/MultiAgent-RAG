@@ -16,7 +16,7 @@ pinecone.init(
     api_key=os.getenv("PINECONE_API_KEY"),
     environment=os.getenv("PINECONE_ENVIRONMENT")
 )
-index = pinecone.Index("test1")
+index = pinecone.Index("nvidia-reports")
 
 # Function to extract text from PDF
 def extract_text_from_pdf(pdf_path):
@@ -83,5 +83,5 @@ def process_reports(directory):
             print(f"Uploaded {len(chunks)} chunks from {filename}")
 
 # Run the processor
-pdf_directory = "path/to/nvidia/reports"
+pdf_directory = "./data/nvidia_reports"
 process_reports(pdf_directory)
