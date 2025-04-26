@@ -5,8 +5,8 @@ import json
 import os
 from typing import List, Dict, Any
 
-# API endpoint
-API_URL = os.environ.get("API_URL", "http://backend:8000")  # When running in Docker
+# API endpoint - Use localhost for local development
+API_URL = "http://localhost:8000"
 
 st.title("NVIDIA Research Assistant")
 st.write("Ask questions about NVIDIA's financial performance and get comprehensive research insights.")
@@ -41,7 +41,7 @@ if st.button("Generate Research Report"):
     if use_websearch:
         agents.append("websearch")
         
-    # Prepare request - modified to handle multiple years and quarters
+    # Prepare request
     payload = {
         "query": query,
         "years": years if years else None,
@@ -71,15 +71,13 @@ if st.button("Generate Research Report"):
                 st.markdown("### Financial Metrics")
                 st.write(result["financial_metrics"]["content"])
                 
-                # Display chart if available with better error handling
+                # Display chart if available
                 if "chart" in result["financial_metrics"] and result["financial_metrics"]["chart"]:
                     chart_path = result["financial_metrics"]["chart"]
                     try:
-                        # Try to display the image
                         st.image(chart_path)
                     except Exception as e:
                         st.error(f"Error displaying chart: {str(e)}")
-                        st.write(f"Chart path was: {chart_path}")
                     
             if "latest_insights" in result and use_websearch:
                 st.markdown("### Latest Insights & Trends")
@@ -93,3 +91,5 @@ if st.button("Generate Research Report"):
                 
         except Exception as e:
             st.error(f"Error generating report: {str(e)}")
+            if "500 Server Error" in str(e):
+                st.error("Make sure the backend server is running on http://localhost:8000")
