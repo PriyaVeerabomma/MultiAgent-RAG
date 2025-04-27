@@ -12,6 +12,10 @@ An integrated research assistant leveraging three specialized agents to produce 
 ## Project URLs
 - Code Labs: [Codelabs Documentation](https://codelabs-preview.appspot.com/?file_id=106NR1vweMmpH44DEJ9zfDCbrTYbA1g37dQby_a1-Vvs/edit?tab=t.5cpih9qtxm58#3)
 - Walkthrough Video : [Application Walkthrough](https://drive.google.com/drive/folders/19EFzdcQYMKe4BoG-hgAOawTClHCNeqy6?usp=sharing)
+- - **Hosted Application Links**:  
+  - **Frontend (Streamlit)**: [http://35.211.138.174:8501/](http://35.211.138.174:8501/)  
+  - **Backend (FastAPI)**: [http://35.211.138.174:8000/](http://35.211.138.174:8000/)
+
 
 
 ## Project Overview
