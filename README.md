@@ -11,6 +11,7 @@ An integrated research assistant leveraging three specialized agents to produce 
 
 ## Project URLs
 - Code Labs: [Codelabs Documentation](https://codelabs-preview.appspot.com/?file_id=106NR1vweMmpH44DEJ9zfDCbrTYbA1g37dQby_a1-Vvs/edit?tab=t.5cpih9qtxm58#3)
+- Walkthrough Video : [Application Walkthrough](https://drive.google.com/drive/folders/19EFzdcQYMKe4BoG-hgAOawTClHCNeqy6?usp=sharing)
 
 
 ## Project Overview
@@ -177,8 +178,7 @@ Below are example queries with placeholders for screenshots demonstrating the sy
   ### Sources and References
   - NVIDIA_2023_Q2_CFO_Commentary.pdf (2023, q2)
   ```
-- **Screenshot**:
-  ![Revenue Growth Report](docs/screenshots/revenue_growth_report.png)
+
 
 #### Example 2: Market Trends Query
 - **Query**: "What are the current market trends affecting NVIDIA's stock price?"
@@ -192,8 +192,7 @@ Below are example queries with placeholders for screenshots demonstrating the sy
   ### Sources and References
   - Tavily Web Search (April 2025)
   ```
-- **Screenshot**:
-  ![Market Trends Report](docs/screenshots/market_trends_report.png)
+-
 
 #### Example 3: Financial Metrics Query
 - **Query**: "Compare NVIDIA's P/E ratio to industry standards in 2023"
@@ -207,8 +206,7 @@ Below are example queries with placeholders for screenshots demonstrating the sy
   ### Sources and References
   - Snowflake DB
   ```
-- **Screenshot**:
-  ![P/E Ratio Report](docs/screenshots/pe_ratio_report.png)
+
 
 ## API Documentation
 
