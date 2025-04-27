@@ -375,29 +375,136 @@ class ResearchOrchestrator:
                 }
                 content["latest_insights"] = f"Error retrieving latest insights: {str(e)}"
         
-        # If only one agent is enabled, use its response as the final report
+        # If only one agent is active, use its response as the final report
         if len(self.active_agents) == 1:
-            if "rag" in self.active_agents:
+            active_agent = self.active_agents[0]  # Get the only active agent
+            if active_agent == "rag":
                 final_response = content.get("historical_data", "")
-            elif "snowflake" in self.active_agents:
+                # Don't include the raw data again
+                results.pop("historical_data", None)
+            elif active_agent == "snowflake":
                 final_response = content.get("financial_metrics", "")
-            elif "websearch" in self.active_agents:
+                # Keep the chart but remove duplicate content
+                if "financial_metrics" in results:
+                    chart = results["financial_metrics"].get("chart", None)
+                    sources = results["financial_metrics"].get("sources", [])
+                    results["financial_metrics"] = {
+                        "chart": chart,
+                        "sources": sources
+                    }
+            elif active_agent == "websearch":
                 final_response = content.get("latest_insights", "")
-            else:
-                final_response = "No agents were active."
-                
-            return {
-                "content": final_response,
-                **results,
-                "processing_time": f"{time.time() - start_time:.2f}s"
-            }
-            
-        # Synthesize the final report if we have multiple sections
-        final_response = ""
-        if len(self.active_agents) > 1:
+                # Don't include the raw data again
+                results.pop("latest_insights", None)
+        else:
+            # Synthesize the final report if we have multiple sections
             try:
-                # Use the enhanced report generation prompt
-                prompt = create_research_report_prompt()
+                # Load the orchestrator synthesis prompt
+                orchestrator_prompt_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
+                                                "prompts", "orchestrator_synthesis.txt")
+                
+                # Use default prompt if the file doesn't exist
+                if os.path.exists(orchestrator_prompt_path):
+                    with open(orchestrator_prompt_path, 'r') as f:
+                        system_prompt = f.read()
+                else:
+                    system_prompt = """
+                    You are NVIDIA Research Director, an expert AI system specializing in producing comprehensive financial research reports on NVIDIA Corporation.
+                    
+                    TASK:
+                    Your task is to synthesize information from multiple specialized research sources into a cohesive, authoritative report that thoroughly addresses the research query.
+                    
+                    INTEGRATION APPROACH:
+                    1. INFORMATION ASSESSMENT:
+                       - Identify the most relevant data points from each source
+                       - Recognize common themes and insights across sources
+                       - Evaluate conflicting information and determine the most reliable perspective
+                       - Prioritize recent, specific information over general or older data
+                    
+                    2. SYNTHESIS METHODOLOGY:
+                       - Create logical connections between historically reported data and current market insights
+                       - Balance financial metrics with product/technology developments in your analysis
+                       - Build a coherent narrative that flows naturally between different information sources
+                       - Ensure all information relates back to addressing the core research query
+                    
+                    REPORT STRUCTURE:
+                    1. EXECUTIVE SUMMARY (2-3 paragraphs)
+                       - Core findings synthesis
+                       - Key metrics highlighted with precise figures
+                       - Central insights derived from multiple sources
+                    
+                    2. HISTORICAL CONTEXT & BACKGROUND (1-2 paragraphs)
+                       - Relevant historical performance data
+                       - Evolution of key business segments
+                       - Context for current performance metrics
+                    
+                    3. FINANCIAL PERFORMANCE ANALYSIS (2-3 paragraphs)
+                       - Revenue and profitability metrics with exact figures
+                       - Segment-by-segment performance breakdown
+                       - Year-over-year and quarter-over-quarter comparisons
+                       - Margin analysis and operational efficiency insights
+                    
+                    4. MARKET POSITION & COMPETITIVE LANDSCAPE (1-2 paragraphs)
+                       - Market share data with precise percentages
+                       - Competitive positioning across key segments
+                       - Industry trends affecting NVIDIA specifically
+                       - Recent market developments and their significance
+                    
+                    5. TECHNOLOGY & PRODUCT ANALYSIS (1-2 paragraphs)
+                       - Key products driving revenue and growth
+                       - Technology innovations and their market impact
+                       - Product pipeline and development roadmap insights
+                       - Adoption trends across different market segments
+                    
+                    6. FUTURE OUTLOOK & PROJECTIONS (1-2 paragraphs)
+                       - Forward-looking metrics from analyst perspectives
+                       - Growth catalysts and potential challenges
+                       - Expected trends based on current market position
+                       - Specific projections with timeframes when available
+                    
+                    7. CONCLUSION & INVESTMENT IMPLICATIONS (1 paragraph)
+                       - Synthesis of key findings
+                       - Overall assessment of NVIDIA's position and trajectory
+                       - Critical insights for understanding the company's future
+                    
+                    FORMATTING REQUIREMENTS:
+                    - Create clear, bold section headings
+                    - Bold all significant metrics and percentages
+                    - Use bullet points for listing key metrics and data points
+                    - Maintain consistent paragraph structure for readability
+                    - Ensure professional language and objective tone throughout
+                    
+                    DO NOT:
+                    - Introduce new information not present in the provided sources
+                    - Make investment recommendations or predictions not supported by the sources
+                    - Present opinions as facts or overstate certainty in projections
+                    - Use vague language when specific figures are available
+                    - Duplicate content from one section to another
+                    
+                    Your synthesis should exceed the value of any individual source by creating a comprehensive, 
+                    integrated analysis that provides deeper insights than any single perspective.
+                    """
+                
+                # Create improved prompt for synthesis
+                prompt = ChatPromptTemplate.from_messages([
+                    ("system", system_prompt),
+                    ("human", """
+                    Please create a comprehensive research report answering the following query: {query}
+                    
+                    Available information from specialized research sources:
+                    
+                    HISTORICAL DATA (From quarterly reports and historical analysis):
+                    {historical_data}
+                    
+                    FINANCIAL METRICS (From stock performance and financial databases):
+                    {financial_metrics}
+                    
+                    LATEST INSIGHTS (From current market research and news):
+                    {latest_insights}
+                    
+                    Synthesize these sources into a cohesive, authoritative research report that thoroughly addresses the query.
+                    """)
+                ])
                 
                 # Generate synthesis
                 logger.info("Generating synthesized report")
