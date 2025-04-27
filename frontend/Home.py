@@ -19,6 +19,8 @@ elif os.path.exists(frontend_env_file):
     print(f"Using .env file from frontend directory: {frontend_env_file}")
 else:
     load_dotenv()  # Fall back to default behavior
+    
+# Get environment variables with appropriate fallbacks
 GITHUB_URL = os.getenv(
     "GITHUB_URL",
     "https://github.com/PriyaVeerabomma/MultiAgent-RAG.git"

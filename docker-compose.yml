@@ -8,10 +8,10 @@ services:
       - "8501:8501"
     env_file:
       - .env
-    environment:
-      - API_URL=http://backend:8000
     depends_on:
       - backend
+    networks:
+      - app-network
     volumes:
       - ./frontend:/app
       - shared_data:/app/shared
@@ -27,9 +27,15 @@ services:
       - .env
     environment:
       - CHARTS_DIR=/app/shared
+    networks:
+      - app-network
     volumes:
       - ./backend:/app
       - shared_data:/app/shared
 
 volumes:
   shared_data:
+
+networks:
+  app-network:
+    driver: bridge

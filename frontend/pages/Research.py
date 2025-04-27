@@ -20,7 +20,11 @@ elif os.path.exists(frontend_env_file):
     print(f"Using .env file from frontend directory: {frontend_env_file}")
 else:
     load_dotenv()  # Fall back to default behavior
-API_URL = os.getenv("API_URL", "http://localhost:8000")
+
+# Determine appropriate API URL based on environment
+# First try CONTAINER_API_URL (for Docker container communication)
+API_URL = os.getenv("CONTAINER_API_URL", os.getenv("API_URL", "http://localhost:8000"))
+print(f"Using API URL: {API_URL}")
 
 # Page config
 st.set_page_config(
