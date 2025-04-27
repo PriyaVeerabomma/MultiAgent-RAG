@@ -1,0 +1,17 @@
+# Core Web Framework
+streamlit>=1.28.0
+
+# HTTP Requests
+requests>=2.30.0
+
+# Data Processing
+pandas>=2.0.0
+
+# Data Visualization
+plotly>=5.15.0
+
+# Image Processing
+pillow>=10.0.0
+
+# Environment Configuration
+python-dotenv>=1.0.0
