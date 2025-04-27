@@ -1,0 +1,4 @@
+Develop a standalone embedding optimizer agent that fine-tunes vector representations for domain-specific datasets.
+Incorporate adaptive embedding dimensionality reduction to improve downstream retrieval performance.
+Support dynamic pruning of low-signal vectors to minimize memory footprint during large-scale retrieval tasks.
+Enable compatibility with multiple embedding models (e.g., BERT, E5, custom NVIDIA LLMs).

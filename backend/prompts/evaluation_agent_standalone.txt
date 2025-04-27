@@ -1,0 +1,4 @@
+Design an Evaluation Agent that autonomously benchmarks agent outputs for accuracy, relevance, and coherence.
+Introduce automatic grading against gold standard answers and retrieval ground-truth datasets.
+Support multi-metric evaluation (e.g., BLEU, ROUGE, semantic similarity).
+Visualize agent performance over time to guide fine-tuning and optimization efforts.

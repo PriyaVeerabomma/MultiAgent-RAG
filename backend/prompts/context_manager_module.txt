@@ -1,0 +1,4 @@
+Create a Context Manager module that maintains dynamic conversation state across multi-turn interactions.
+Implement intelligent summarization of previous interactions to prevent context window overflow in LLM prompts.
+Support memory slotting (short-term, long-term) to differentiate critical facts from transient details.
+Expose APIs to reset, expand, or prune context memory on-demand.
