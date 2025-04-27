@@ -29,7 +29,7 @@ The **NVIDIA Research Assistant** is a generative AI system designed to assist f
 
 The system is built with a multi-agent architecture orchestrated by LangGraph, featuring a FastAPI backend for API services and a Streamlit frontend for user interaction. It supports natural language queries, metadata filtering by year and quarter, and multimodal output (text reports with visualizations). The project is deployed using Docker for scalability and ease of setup.
 
-This project was developed as part of Assignment 5A for the MSAI program, demonstrating proficiency in RAG and multimodal integration as core generative AI techniques.
+This project was developed as part of a prompt engineering course, demonstrating proficiency in RAG and multimodal integration as core generative AI techniques.
 
 ## System Architecture
 
@@ -172,6 +172,7 @@ graph TD
 ### Example Queries and Screenshots
 
 Below are example queries with placeholders for screenshots demonstrating the system in action. (Note: Screenshots should be added to the `docs/screenshots/` directory and linked here.)
+![image](https://github.com/user-attachments/assets/7571bed3-c23f-471b-9ad9-6ffb06dcd813)
 
 #### Example 1: Revenue Growth Query
 - **Query**: "What was NVIDIA's revenue growth in the past year?"
@@ -185,6 +186,7 @@ Below are example queries with placeholders for screenshots demonstrating the sy
   ### Sources and References
   - NVIDIA_2023_Q2_CFO_Commentary.pdf (2023, q2)
   ```
+![image](https://github.com/user-attachments/assets/d252b95e-2e1f-499f-a4ed-1591708af5e2)
 
 
 #### Example 2: Market Trends Query
