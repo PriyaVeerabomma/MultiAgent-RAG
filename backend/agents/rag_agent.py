@@ -201,7 +201,6 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.chains import LLMChain
 from langchain.output_parsers import ResponseSchema, StructuredOutputParser
 import time
-from dotenv import load_dotenv
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -231,23 +230,38 @@ class RagAgent:
         if verbose:
             logging.getLogger().setLevel(logging.DEBUG)
         
-        # Simple direct environment loading
-        load_dotenv()
+        # Directly read the .env file to get the API key
+        backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        env_file = os.path.join(backend_dir, '.env')
         
-        # Get API keys from environment
-        api_key = os.getenv("PINECONE_API_KEY")
-        openai_api_key = os.getenv("OPENAI_API_KEY")
+        # Load environment variables directly from .env file
+        env_vars = {}
+        with open(env_file, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                if '=' in line:
+                    key, value = line.split('=', 1)
+                    env_vars[key.strip()] = value.strip()
         
-        # Validate keys are present
-        if not api_key:
-            raise ValueError("PINECONE_API_KEY not found in environment")
-        if not openai_api_key:
-            raise ValueError("OPENAI_API_KEY not found in environment")
+        # Get API keys from loaded variables
+        api_key = env_vars.get("PINECONE_API_KEY")
+        openai_api_key = env_vars.get("OPENAI_API_KEY")
         
-        # Log for debugging
+        # Store in environment (for other components)
+        os.environ["PINECONE_API_KEY"] = api_key
+        os.environ["OPENAI_API_KEY"] = openai_api_key
+        
+        # Print debug info about environment variables
         logger.info(f"PINECONE_API_KEY exists and has length: {len(api_key) if api_key else 0}")
         logger.info(f"Pinecone API key starts with: {api_key[:5] if api_key and len(api_key) > 5 else 'N/A'}")
         logger.info(f"OPENAI_API_KEY exists and has length: {len(openai_api_key) if openai_api_key else 0}")
+        
+        if not api_key:
+            raise ValueError("PINECONE_API_KEY not found in .env file")
+        if not openai_api_key:
+            raise ValueError("OPENAI_API_KEY not found in .env file")
         
         # Initialize Pinecone with the API key
         self.pc = Pinecone(api_key=api_key)
