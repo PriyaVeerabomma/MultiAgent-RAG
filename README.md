@@ -2,6 +2,20 @@
 
 An integrated research assistant leveraging three specialized agents to produce comprehensive research reports on NVIDIA.
 
+[![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![HuggingFace](https://img.shields.io/badge/HuggingFace-Transformers-yellow.svg)](https://huggingface.co/transformers)
+[![PEFT](https://img.shields.io/badge/PEFT-LoRA-orange.svg)](https://huggingface.co/docs/peft)
+[![T5](https://img.shields.io/badge/Model-T5--Base-8B008B.svg)](https://huggingface.co/t5-base)
+[![OpenAI](https://img.shields.io/badge/LLM-OpenAI-blueviolet.svg)](https://openai.com/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Documentation](https://img.shields.io/badge/docs-Codelabs-blue.svg)](https://codelabs-preview.appspot.com/?file_id=1kMzJ_qRJrDknPFatF1raPvsoJUatl_-tfJuICo7p4EM#0)
+
+
+## Project URLs
+- Code Labs: [Codelabs Documentation](https://codelabs-preview.appspot.com/?file_id=1_Vy54X6Vpx9XXeu1BxyJVCzGZbcgVMvD2RNXM6kx7CM/edit?tab=t.5cpih9qtxm58#0)
+- Walkthrough Video : [Application Walkthrough](https://drive.google.com/drive/folders/1898HGutXjQIxwx3OVnr_Yvx9Uq_SKAE1?usp=sharing)
+
 ## Project Overview
 
 The **NVIDIA Research Assistant** is a generative AI system designed to assist financial analysts and investors by generating detailed research reports on NVIDIA’s financial performance. The system combines three specialized agents to provide a holistic view of NVIDIA’s historical performance, financial metrics, and real-time industry insights:
