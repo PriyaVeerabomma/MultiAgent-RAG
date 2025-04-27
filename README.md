@@ -15,6 +15,7 @@ An integrated research assistant leveraging three specialized agents to produce 
 - - **Hosted Application Links**:  
   - **Frontend (Streamlit)**: [http://35.211.138.174:8501/](http://35.211.138.174:8501/)  
   - **Backend (FastAPI)**: [http://35.211.138.174:8000/](http://35.211.138.174:8000/)
+- **Web Page**: [Web Page](https://v0-simple-project-showcase-eight.vercel.app/)
 
 
 
@@ -31,6 +32,8 @@ The system is built with a multi-agent architecture orchestrated by LangGraph, f
 This project was developed as part of Assignment 5A for the MSAI program, demonstrating proficiency in RAG and multimodal integration as core generative AI techniques.
 
 ## System Architecture
+
+![Screenshot 2025-04-26 at 10 42 58 PM](https://github.com/user-attachments/assets/3dcf66ac-b29f-4b3d-9278-12d0bcbda625)
 
 The system consists of the following components:
 
