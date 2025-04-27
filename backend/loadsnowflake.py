@@ -1,12 +1,11 @@
 import os
 from pathlib import Path
-import pandas as pd
 import snowflake.connector
 from dotenv import load_dotenv
 import glob
 
 # ---------- LOAD .env FILE SAFELY ---------- #
-env_path = Path(__file__).resolve().parent / ".env"
+env_path = Path(__file__).resolve().parent.parent / ".env"
 if env_path.exists():
     load_dotenv(dotenv_path=env_path)
 else:
@@ -16,62 +15,57 @@ else:
 SNOWFLAKE_USER = os.getenv("SNOWFLAKE_USER")
 SNOWFLAKE_PASSWORD = os.getenv("SNOWFLAKE_PASSWORD")
 SNOWFLAKE_ACCOUNT = os.getenv("SNOWFLAKE_ACCOUNT")
-SNOWFLAKE_REGION = os.getenv("SNOWFLAKE_REGION")
-SNOWFLAKE_ROLE = os.getenv("SNOWFLAKE_ROLE")
-SNOWFLAKE_DATABASE = os.getenv("SNOWFLAKE_DATABASE")
-SNOWFLAKE_SCHEMA = os.getenv("SNOWFLAKE_SCHEMA")
-SNOWFLAKE_WAREHOUSE = os.getenv("SNOWFLAKE_WAREHOUSE")
-SNOWFLAKE_STAGE = os.getenv("SNOWFLAKE_STAGE")
+SNOWFLAKE_ROLE = os.getenv("SNOWFLAKE_ROLE", "ACCOUNTADMIN")
+SNOWFLAKE_DATABASE = os.getenv("SNOWFLAKE_DATABASE", "NVIDIA_DB")
+SNOWFLAKE_SCHEMA = os.getenv("SNOWFLAKE_SCHEMA", "STOCK_DATA")
+SNOWFLAKE_WAREHOUSE = os.getenv("SNOWFLAKE_WAREHOUSE", "NVIDIA_WH")
+SNOWFLAKE_STAGE = os.getenv("SNOWFLAKE_STAGE", "NVIDIA_STAGE")
 
-# ---------- FIND THE LATEST NVDA CSV FILE ---------- #
-def find_latest_nvda_csv():
-    # Find all NVDA CSV files in the current directory
-    nvda_files = glob.glob("NVDA_5yr_history_*.csv")
-    
-    if not nvda_files:
-        raise FileNotFoundError("No NVDA CSV files found in the current directory")
-    
-    # Sort by date (assuming filename format NVDA_5yr_history_YYYYMMDD.csv)
-    latest_file = sorted(nvda_files, reverse=True)[0]
-    print(f"📊 Found latest NVDA data file: {latest_file}")
-    return latest_file
-
-# ---------- DEBUG PRINT ---------- #
-def print_env_check():
-    print("✅ ENV CHECK:")
-    print("USER:", SNOWFLAKE_USER)
-    print("ACCOUNT (full):", SNOWFLAKE_ACCOUNT)
-    print("ROLE:", SNOWFLAKE_ROLE)
-    print("WAREHOUSE:", SNOWFLAKE_WAREHOUSE)
-    print("DATABASE:", SNOWFLAKE_DATABASE)
-    print("SCHEMA:", SNOWFLAKE_SCHEMA)
-    print("STAGE:", SNOWFLAKE_STAGE)
-
-# ---------- UPLOAD TO SNOWFLAKE STAGE ---------- #
-def upload_csv_to_stage(file_path: str):
-    print("🔗 Connecting to Snowflake...")
-    conn = snowflake.connector.connect(
+def get_snowflake_connection():
+    """Create Snowflake connection with certificate handling"""
+    return snowflake.connector.connect(
         user=SNOWFLAKE_USER,
         password=SNOWFLAKE_PASSWORD,
         account=SNOWFLAKE_ACCOUNT,
         role=SNOWFLAKE_ROLE,
         warehouse=SNOWFLAKE_WAREHOUSE,
         database=SNOWFLAKE_DATABASE,
-        schema=SNOWFLAKE_SCHEMA
+        schema=SNOWFLAKE_SCHEMA,
+        insecure_mode=True,  # Bypass OCSP checks
+        ocsp_response_cache_filename='/tmp/ocsp_cache'
     )
+
+# ---------- FIND THE LATEST NVDA CSV FILE ---------- #
+def find_latest_nvda_csv():
+    nvda_files = glob.glob("NVDA_5yr_history_*.csv")
+    if not nvda_files:
+        raise FileNotFoundError("No NVDA CSV files found in the current directory")
+    
+    latest_file = sorted(nvda_files, reverse=True)[0]
+    print(f"📊 Found latest NVDA data file: {latest_file}")
+    return latest_file
+
+# ---------- UPLOAD TO SNOWFLAKE STAGE ---------- #
+def upload_csv_to_stage(file_path: str):
+    print("🔗 Connecting to Snowflake...")
+    conn = get_snowflake_connection()
     cursor = conn.cursor()
 
     try:
         print("📤 Uploading CSV to Snowflake stage...")
-        cursor.execute(f"PUT file://{file_path} @{SNOWFLAKE_STAGE} AUTO_COMPRESS=FALSE OVERWRITE=TRUE")
+        # Use absolute path for reliable PUT operation
+        abs_path = os.path.abspath(file_path)
+        cursor.execute(f"PUT 'file://{abs_path}' @{SNOWFLAKE_STAGE} AUTO_COMPRESS=FALSE OVERWRITE=TRUE")
+
         print("✅ Upload complete!")
     except Exception as e:
         print(f"❌ Failed to upload CSV: {e}")
+        raise
     finally:
         cursor.close()
         conn.close()
 
-# ---------- EXECUTE SETUP QUERIES IN SNOWFLAKE ---------- #
+# ---------- EXECUTE SETUP QUERIES ---------- #
 def run_sql_setup(csv_filename):
     base_filename = os.path.basename(csv_filename)
     
@@ -101,15 +95,7 @@ def run_sql_setup(csv_filename):
     ]
 
     print("⚙️ Executing SQL setup in Snowflake...")
-    conn = snowflake.connector.connect(
-        user=SNOWFLAKE_USER,
-        password=SNOWFLAKE_PASSWORD,
-        account=SNOWFLAKE_ACCOUNT,
-        role=SNOWFLAKE_ROLE,
-        warehouse=SNOWFLAKE_WAREHOUSE,
-        database=SNOWFLAKE_DATABASE,
-        schema=SNOWFLAKE_SCHEMA
-    )
+    conn = get_snowflake_connection()
     cursor = conn.cursor()
 
     try:
@@ -119,19 +105,19 @@ def run_sql_setup(csv_filename):
                 print(f"🔄 Executing: {stmt_clean.splitlines()[0].strip()}...")
                 cursor.execute(stmt_clean)
                 
-                # If this is a query that returns results (like LIST), print them
                 if cursor.description:
                     results = cursor.fetchall()
                     if results:
                         print("   Results:")
-                        for row in results[:5]:  # Show first 5 results
+                        for row in results[:5]:
                             print(f"   - {row}")
                         if len(results) > 5:
                             print(f"   ...and {len(results) - 5} more")
                 
-                print(f"✅ Executed successfully")
+                print("✅ Executed successfully")
     except Exception as e:
         print(f"❌ Error executing setup: {e}")
+        raise
     finally:
         cursor.close()
         conn.close()
@@ -139,24 +125,14 @@ def run_sql_setup(csv_filename):
 # ---------- VERIFY DATA LOADED ---------- #
 def verify_data_loaded():
     print("🔍 Verifying data loaded correctly...")
-    conn = snowflake.connector.connect(
-        user=SNOWFLAKE_USER,
-        password=SNOWFLAKE_PASSWORD,
-        account=SNOWFLAKE_ACCOUNT,
-        role=SNOWFLAKE_ROLE,
-        warehouse=SNOWFLAKE_WAREHOUSE,
-        database=SNOWFLAKE_DATABASE,
-        schema=SNOWFLAKE_SCHEMA
-    )
+    conn = get_snowflake_connection()
     cursor = conn.cursor()
 
     try:
-        # Count rows
         cursor.execute("SELECT COUNT(*) FROM NVDA_STOCK_DATA")
         count = cursor.fetchone()[0]
         print(f"✅ Found {count} rows in NVDA_STOCK_DATA table")
         
-        # Sample data
         cursor.execute("SELECT * FROM NVDA_STOCK_DATA ORDER BY DATE DESC LIMIT 5")
         rows = cursor.fetchall()
         print("📊 Recent data samples:")
@@ -165,15 +141,29 @@ def verify_data_loaded():
             
     except Exception as e:
         print(f"❌ Error verifying data: {e}")
+        raise
     finally:
         cursor.close()
         conn.close()
 
 # ---------- MAIN EXECUTION ---------- #
 if __name__ == "__main__":
-    print_env_check()
-    csv_file = find_latest_nvda_csv()
-    upload_csv_to_stage(csv_file)
-    run_sql_setup(csv_file)
-    verify_data_loaded()
-    print("🎯 All steps completed. NVIDIA stock data is live in Snowflake!")
+    print("✅ ENV CHECK:")
+    print(f"USER: {SNOWFLAKE_USER}")
+    print(f"ACCOUNT: {SNOWFLAKE_ACCOUNT}")
+    print(f"ROLE: {SNOWFLAKE_ROLE}")
+    print(f"WAREHOUSE: {SNOWFLAKE_WAREHOUSE}")
+    print(f"DATABASE: {SNOWFLAKE_DATABASE}")
+    print(f"SCHEMA: {SNOWFLAKE_SCHEMA}")
+    print(f"STAGE: {SNOWFLAKE_STAGE}")
+    
+    try:
+        csv_file = find_latest_nvda_csv()
+        upload_csv_to_stage(csv_file)
+        run_sql_setup(csv_file)
+        verify_data_loaded()
+        print("🎯 All steps completed. NVIDIA stock data is live in Snowflake!")
+    except Exception as e:
+        print(f"🔥 Critical error: {str(e)}")
+        print("❌ Load process failed")
+

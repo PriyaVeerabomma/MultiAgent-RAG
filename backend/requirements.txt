@@ -1,21 +1,38 @@
+# Core Framework
 fastapi>=0.100.0
 uvicorn>=0.22.0
+
+# LangChain and AI
 langchain>=0.1.0
 langchain-core>=0.1.0
 langchain-community>=0.0.10
 langchain-openai>=0.0.5
 langchain-huggingface>=0.0.2
 langgraph>=0.0.20
+
+# Vector Database
 pinecone>=3.0.0
+
+# Data Processing and Analysis
 snowflake-connector-python>=3.0.0
 pandas>=2.0.0
-matplotlib>=3.7.0
-tavily-python>=0.2.2
 numpy>=1.24.0
+
+# Visualization
+matplotlib>=3.7.0
+
+# Document Processing
+PyPDF2>=3.0.1
+sentence-transformers>=2.2.2
+
+# Web Search and APIs
+tavily-python>=0.2.2
 requests>=2.30.0
+
+# Environment and Configuration
 python-dotenv>=1.0.0
 pydantic>=2.0.0
+
+# Templating and File Handling
 jinja2>=3.1.0
 python-multipart>=0.0.6
-sentence-transformers>=2.2.2
-PyPDF2>=3.0.1
