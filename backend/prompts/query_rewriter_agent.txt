@@ -1,0 +1,4 @@
+Build a Query Rewriter agent that refines user inputs for optimal retrieval and generation.
+Introduce techniques like synonym expansion, query disambiguation, and noise reduction.
+Implement a lightweight reinforcement learning loop to iteratively improve rephrasing quality based on retrieval success.
+Provide fallback to original queries if rewrites degrade retrieval relevance.
