@@ -72,7 +72,7 @@ sleep 5
 # Start frontend
 echo "Starting frontend..."
 cd frontend
-streamlit run app.py &
+streamlit run Home.py &
 FRONTEND_PID=$!
 cd ..
 
