@@ -14,8 +14,22 @@ logger = logging.getLogger(__name__)
 
 class WebSearchAgent:
     def __init__(self):
-        # Load environment variables
-        load_dotenv()
+        # Load environment variables from root first, then backend
+        backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        root_dir = os.path.dirname(backend_dir)
+        
+        # Check if .env exists in root directory first
+        root_env_file = os.path.join(root_dir, '.env')
+        backend_env_file = os.path.join(backend_dir, '.env')
+        
+        if os.path.exists(root_env_file):
+            load_dotenv(root_env_file)
+            print(f"Using .env file from root directory: {root_env_file}")
+        elif os.path.exists(backend_env_file):
+            load_dotenv(backend_env_file)
+            print(f"Using .env file from backend directory: {backend_env_file}")
+        else:
+            load_dotenv()  # Fall back to default behavior
         self.api_key = os.getenv("TAVILY_API_KEY")
         if not self.api_key:
             logger.error("TAVILY_API_KEY environment variable not set!")

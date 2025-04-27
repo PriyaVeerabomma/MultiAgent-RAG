@@ -3,8 +3,22 @@ import streamlit as st
 import os
 from dotenv import load_dotenv
 
-# Load .env variables
-load_dotenv()
+# Load environment variables from root first, then frontend
+frontend_dir = os.path.dirname(os.path.abspath(__file__))
+root_dir = os.path.dirname(frontend_dir)
+
+# Check if .env exists in root directory first
+root_env_file = os.path.join(root_dir, '.env')
+frontend_env_file = os.path.join(frontend_dir, '.env')
+
+if os.path.exists(root_env_file):
+    load_dotenv(root_env_file)
+    print(f"Using .env file from root directory: {root_env_file}")
+elif os.path.exists(frontend_env_file):
+    load_dotenv(frontend_env_file)
+    print(f"Using .env file from frontend directory: {frontend_env_file}")
+else:
+    load_dotenv()  # Fall back to default behavior
 GITHUB_URL = os.getenv(
     "GITHUB_URL",
     "https://github.com/PriyaVeerabomma/MultiAgent-RAG.git"

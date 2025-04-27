@@ -230,9 +230,22 @@ class RagAgent:
         if verbose:
             logging.getLogger().setLevel(logging.DEBUG)
         
-        # Directly read the .env file to get the API key
+        # Try to read the .env file from the root directory first, then fall back to backend
         backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        env_file = os.path.join(backend_dir, '.env')
+        root_dir = os.path.dirname(backend_dir)
+        
+        # Check if .env exists in root directory first
+        root_env_file = os.path.join(root_dir, '.env')
+        backend_env_file = os.path.join(backend_dir, '.env')
+        
+        if os.path.exists(root_env_file):
+            env_file = root_env_file
+            print(f"Using .env file from root directory: {env_file}")
+        elif os.path.exists(backend_env_file):
+            env_file = backend_env_file
+            print(f"Using .env file from backend directory: {env_file}")
+        else:
+            raise FileNotFoundError("Could not find .env file in either root or backend directory")
         
         # Load environment variables directly from .env file
         env_vars = {}
