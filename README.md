@@ -2,6 +2,17 @@
 
 An integrated research assistant leveraging three specialized agents to produce comprehensive research reports on NVIDIA.
 
+[![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![OpenAI](https://img.shields.io/badge/LLM-OpenAI-blueviolet.svg)](https://openai.com/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Documentation](https://img.shields.io/badge/docs-Codelabs-blue.svg)](https://codelabs-preview.appspot.com/?file_id=106NR1vweMmpH44DEJ9zfDCbrTYbA1g37dQby_a1-Vvs/edit?tab=t.5cpih9qtxm58#3)
+
+
+## Project URLs
+- Code Labs: [Codelabs Documentation](https://codelabs-preview.appspot.com/?file_id=106NR1vweMmpH44DEJ9zfDCbrTYbA1g37dQby_a1-Vvs/edit?tab=t.5cpih9qtxm58#3)
+
+
 ## Project Overview
 
 The **NVIDIA Research Assistant** is a generative AI system designed to assist financial analysts and investors by generating detailed research reports on NVIDIA’s financial performance. The system combines three specialized agents to provide a holistic view of NVIDIA’s historical performance, financial metrics, and real-time industry insights:
